@@ -5,4 +5,14 @@
 #define u8	unsigned char
 #define u16 unsigned short
 
+/* descriptor of gate */
+typedef struct s_gate
+{
+	u16 offset_low;
+	u16 selector;
+	u8 	dcount;
+	u8	attr;
+	u16 offset_high;
+}GATE;
+
 #endif
