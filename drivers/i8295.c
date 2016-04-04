@@ -20,7 +20,8 @@ void init_8259A() {
 	// ICW4
 	port_byte_out(INT_M_CTLMASK, 0x1);
 	port_byte_out(INT_S_CTLMASK, 0X1);
+
 	//OCW1
-	port_byte_out(INT_M_CTLMASK, 0xFF);
+	port_byte_out(INT_M_CTLMASK, 0xFD);
 	port_byte_out(INT_S_CTLMASK, 0XFF);
 }

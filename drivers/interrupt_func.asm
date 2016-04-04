@@ -3,8 +3,12 @@
 
 extern idt_ptr
 extern exception_handler
+extern clock_interrupt
+extern keyboard_interrupt
 
 global load_idt_ptr
+global disable_interrupt
+global enable_interrupt
 global nmi
 global divide_error
 global single_step_exception
@@ -21,13 +25,31 @@ global stack_exception
 global general_protection
 global page_fault
 global copr_error
-
-
+global clock_handler_invoker
+global keyboard_interrupt_invoker
 
 load_idt_ptr:
-	cli	;clear the response of interrupt
+	cli
 	lidt [idt_ptr]
 	ret
+
+enable_interrupt:
+	sti
+	ret
+
+disable_interrupt:
+	cli
+	ret
+
+;clock
+clock_handler_invoker:
+	call clock_interrupt
+	iretd
+
+;keyboard
+keyboard_interrupt_invoker:
+	call keyboard_interrupt
+	iretd
 
 divide_error:
 	push 	0xFFFFFFFF

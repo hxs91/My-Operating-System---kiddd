@@ -4,6 +4,7 @@
 
 extern void load_idt_ptr();
 extern void init_prot();
+extern void enable_interrupt();
 
 void say_hello() {
 	clear_screen();
@@ -26,12 +27,17 @@ void init_interrupt() {
 
 	// building the mapping between interrupt and its handler
 	init_prot();
+
+	//open the response of interrup
+	enable_interrupt();
+
 	print("Initialize end.\n");
 }
 
 int main(){
 	say_hello();
 	init_interrupt();
-	__asm__("ud2":::);
+	//__asm__("ud2":::);
+	while(1){}
 	return 0;
 }

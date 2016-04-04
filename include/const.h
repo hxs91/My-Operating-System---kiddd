@@ -37,14 +37,18 @@
 #define	INT_VECTOR_COPROC_ERR		0x10
 
 /* selector */
-#define SELECTOR_CODE_SEGMENT	0x08
+#define SELECTOR_CODE_SEGMENT	0x08 //this is the location of the code segment in the memory
 
 /*Gate descriptor*/
-#define DA_386IGate 0x8E
+#define DA_386IGate 0x8E	
 
 /* privilege definition */
 #define	PRIVILEGE_KRNL	0
 #define	PRIVILEGE_TASK	1
 #define	PRIVILEGE_USER	3
+
+
+/* keyboard */
+#define KEYBOARD_INPUT_BUFFER 0x60
 
 #endif

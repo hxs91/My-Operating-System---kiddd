@@ -25,6 +25,8 @@ extern void	stack_exception();
 extern void	general_protection();
 extern void	page_fault();
 extern void	copr_error();
+extern void clock_handler_invoker();
+extern void keyboard_interrupt_invoker();
 
 PUBLIC void exception_handler(int vec_no, int err_code, int eip, int cs, int eflag) {
 	print("Yes, you are in the interrupt.\n");
@@ -38,6 +40,22 @@ PRIVATE void init_idt_desc(u8 vector, u8 desc_type, int_handler handler, u8 priv
 	p_gate -> dcount = 0;
 	p_gate -> attr = desc_type | (privilege << 5);
 	p_gate -> offset_high = (base >> 16) & 0xFFFF;
+}
+
+/*
+clock interrupt handler
+*/
+PUBLIC void clock_interrupt() {
+	print("I will refresh per second.\n");
+	port_byte_out(INT_M_CTL, 0x20);
+}
+
+/*
+keyboard interrupt handler
+*/
+PUBLIC void keyboard_interrupt() {
+	print("*");
+	port_byte_in(KEYBOARD_INPUT_BUFFER);
 }
 
 /*======================================================================*
@@ -95,5 +113,13 @@ PUBLIC void init_prot()
 
 	init_idt_desc(INT_VECTOR_COPROC_ERR,	DA_386IGate,
 		      copr_error,		PRIVILEGE_KRNL);
+
+	//clock
+	init_idt_desc(INT_VECTOR_IRQ0, DA_386IGate,
+			 clock_handler_invoker, PRIVILEGE_KRNL);
+
+	//keyboard
+	init_idt_desc(INT_VECTOR_IRQ0 + 1, DA_386IGate,
+			 keyboard_interrupt_invoker, PRIVILEGE_KRNL);
 }
 
