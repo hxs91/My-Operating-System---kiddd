@@ -15,4 +15,7 @@ typedef struct s_gate
 	u16 offset_high;
 }GATE;
 
+//typedef the function pointer of interrupt handler function
+typedef void (*int_handler) ();
+
 #endif

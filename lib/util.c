@@ -18,3 +18,10 @@ void memory_copy(char * source, char * dest, int num_bytes) {
 		*(dest + i) = *(source + i);
 	}
 }
+
+/*
+from integer to string
+*/
+char * itoa(int num) {
+	
+}

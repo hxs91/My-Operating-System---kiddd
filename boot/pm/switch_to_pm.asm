@@ -9,7 +9,7 @@ switch_to_pm:
 	
 	lgdt [gdt_descriptor]		; load the GDT
 	
-	mov eax, cr0				;entering the 32-bit mode
+	mov eax, cr0				; entering the 32-bit mode
 	or eax, 0x1
 	mov cr0, eax
 	

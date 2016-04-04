@@ -19,3 +19,8 @@ u16 port_word_in(u16 port) {
 void port_word_out(u16 port, u16 data) {
 	__asm__("out %%ax, %%dx" : : "a"(data), "d"(port));
 }
+
+/*
+generate a software interrupt
+*/
+//void 
