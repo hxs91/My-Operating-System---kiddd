@@ -1,5 +1,8 @@
 #include "screen.h"
 #include "type.h"
+#include "const.h"
+
+extern void memory_copy(char * source, char * dest, int num_bytes);
 
 /*
 get the offset according the given col and row.
@@ -73,14 +76,14 @@ int handle_scrolling(int cursor_offset) {
 	//move each line up
 	int i;
 	for (i = 1; i < MAX_ROWS; i++) {
-		memory_copy(get_screen_offset(0, i) + VIDEO_ADDRESS,
-					get_screen_offset(0, i-1) + VIDEO_ADDRESS,
+		memory_copy((char *)(get_screen_offset(0, i) + VIDEO_ADDRESS),
+					(char *)(get_screen_offset(0, i-1) + VIDEO_ADDRESS),
 					MAX_COLS * 2);
 	}
 	//clean up the last row
-	char * last_line = (char*)(get_screen_offset(0, MAX_ROWS - 1) + VIDEO_ADDRESS);
+	char * last_line = (char *)(get_screen_offset(0, MAX_ROWS - 1) + VIDEO_ADDRESS);
 	for (i = 0; i < MAX_COLS * 2 ; i++ ) {
-		last_line[i] = 0;
+		last_line[i] = ' ';
 	}
 	//reset the cursor_offset, thus it will appear at the bottom of the screen
 	cursor_offset -= 2 * MAX_COLS;
@@ -165,4 +168,10 @@ void clear_screen() {
 
 	//then reset the cursor
 	set_cursor(get_screen_offset(0, 0));
+}
+
+PUBLIC void print_hex(int num) {
+	char output[16];
+	itoa(output, num);
+	print(output);
 }

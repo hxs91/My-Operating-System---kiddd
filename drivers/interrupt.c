@@ -27,6 +27,7 @@ extern void	page_fault();
 extern void	copr_error();
 extern void clock_handler_invoker();
 extern void keyboard_interrupt_invoker();
+extern void enable_interrupt();
 
 PUBLIC void exception_handler(int vec_no, int err_code, int eip, int cs, int eflag) {
 	print("Yes, you are in the interrupt.\n");
@@ -54,8 +55,9 @@ PUBLIC void clock_interrupt() {
 keyboard interrupt handler
 */
 PUBLIC void keyboard_interrupt() {
-	print("*");
-	port_byte_in(KEYBOARD_INPUT_BUFFER);
+	u8 scan_code = port_byte_in(KEYBOARD_INPUT_BUFFER);
+	print_hex(scan_code);
+	port_byte_out(INT_M_CTL, 0x20);
 }
 
 /*======================================================================*

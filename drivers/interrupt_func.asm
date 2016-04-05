@@ -112,4 +112,4 @@ copr_error:
 exception:
 	call exception_handler
 	add	esp, 4*2
-	hlt
+	iretd
