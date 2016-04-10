@@ -13,7 +13,7 @@ switch_to_pm:
 	or eax, 0x1
 	mov cr0, eax
 	
-	jmp CODE_SEG:init_pm		; to ensure all stage of one instruction, we use a far jmp here
+	jmp dword CODE_SEG:init_pm		; to ensure all stage of one instruction, we use a far jmp here
 	
 [bits 32]
 ;initialise registers and the stach once in PM

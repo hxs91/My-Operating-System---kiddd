@@ -3,10 +3,7 @@ Add interrupt surpport
 */
 #include "const.h"
 #include "type.h"
-
-u8 		idt_ptr[6];		// idt descriptor, 0-15:limit, 16-47:base
-GATE	idt[IDT_SIZE];	// the whole idt.
-
+#include "global.h"
 
 /* 中断处理函数 */
 extern void	divide_error();
@@ -30,7 +27,9 @@ extern void keyboard_interrupt_invoker();
 extern void enable_interrupt();
 
 PUBLIC void exception_handler(int vec_no, int err_code, int eip, int cs, int eflag) {
-	print("Yes, you are in the interrupt.\n");
+	print("exception vector number:");
+	print_hex(vec_no);
+	print("\n");
 }
 
 PRIVATE void init_idt_desc(u8 vector, u8 desc_type, int_handler handler, u8 privilege) {
