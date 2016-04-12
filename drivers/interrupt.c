@@ -4,6 +4,7 @@ Add interrupt surpport
 #include "const.h"
 #include "type.h"
 #include "global.h"
+#include "screen.h"
 
 /* 中断处理函数 */
 extern void	divide_error();
@@ -27,8 +28,10 @@ extern void keyboard_interrupt_invoker();
 extern void enable_interrupt();
 
 PUBLIC void exception_handler(int vec_no, int err_code, int eip, int cs, int eflag) {
-	print("exception vector number:");
+	print("\nexception vector number:");
 	print_hex(vec_no);
+	print(", and the error code:");
+	print_hex(err_code);
 	print("\n");
 }
 
@@ -46,8 +49,11 @@ PRIVATE void init_idt_desc(u8 vector, u8 desc_type, int_handler handler, u8 priv
 clock interrupt handler
 */
 PUBLIC void clock_interrupt() {
-	print("I will refresh per second.\n");
-	port_byte_out(INT_M_CTL, 0x20);
+	//print("I will refresh per second.\n");
+	u8 tmp = *((u8 *) VIDEO_ADDRESS);
+	tmp ++;
+	*((u8 *) VIDEO_ADDRESS) = tmp;
+	port_byte_out(INT_M_CTL, EOI);
 }
 
 /*
@@ -56,7 +62,7 @@ keyboard interrupt handler
 PUBLIC void keyboard_interrupt() {
 	u8 scan_code = port_byte_in(KEYBOARD_INPUT_BUFFER);
 	print_hex(scan_code);
-	port_byte_out(INT_M_CTL, 0x20);
+	port_byte_out(INT_M_CTL, EOI);
 }
 
 /*======================================================================*

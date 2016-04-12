@@ -30,7 +30,7 @@ run:
 os-image: boot/boot_sect.bin kernel.bin
 	cat $^ > os-image
 
-kernel.bin: kernel/kernel_entry.o drivers/interrupt_func.o ${OBJ}
+kernel.bin: kernel/kernel_entry.o kernel/interrupt_func.o ${OBJ}
 	ld -o $@ -melf_i386 -Ttext 0x1000 $^ --oformat binary
 
 %.o: %.c ${HEADERS}
@@ -38,7 +38,7 @@ kernel.bin: kernel/kernel_entry.o drivers/interrupt_func.o ${OBJ}
 
 #Assemble the kernel_entry
 %.o: %.asm
-	nasm $< -f elf -o $@
+	nasm $< -f elf -I './kernel/' -o $@
 
 %.bin:  %.asm
 	nasm $< -f bin -I './boot/' -o $@

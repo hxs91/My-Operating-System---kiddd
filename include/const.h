@@ -41,6 +41,8 @@
 #define	INT_VECTOR_PAGE_FAULT		0xE
 #define	INT_VECTOR_COPROC_ERR		0x10
 
+#define EOI	0x20
+
 /*Gate descriptor*/
 #define DA_386IGate 0x8E	
 

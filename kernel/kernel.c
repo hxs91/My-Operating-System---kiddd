@@ -5,6 +5,8 @@
 
 extern void restart();
 
+PUBLIC u32 k_reenter;
+
 void say_hello() {
 	print("Welcome to my developed OS: kiddd~\n");
 }
@@ -58,6 +60,7 @@ void kernel_main() {
 
 int main(){
 	say_hello();
+	k_reenter = -1;
 	kernel_main();
 	while(1) {}
 	return 0;
