@@ -48,12 +48,14 @@ PRIVATE void init_idt_desc(u8 vector, u8 desc_type, int_handler handler, u8 priv
 /*
 clock interrupt handler
 */
-PUBLIC void clock_interrupt() {
+PUBLIC void clock_interrupt(int irq) {
 	//print("I will refresh per second.\n");
-	u8 tmp = *((u8 *) VIDEO_ADDRESS);
-	tmp ++;
-	*((u8 *) VIDEO_ADDRESS) = tmp;
 	port_byte_out(INT_M_CTL, EOI);
+	print("#");
+	p_proc_ready ++;
+	if (p_proc_ready >= proc_table + NR_TASKS) {
+		p_proc_ready = proc_table;
+	}
 }
 
 /*

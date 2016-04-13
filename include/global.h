@@ -11,3 +11,4 @@ extern PROCESS 		proc_table[NR_TASKS];
 extern	char		task_stack[];
 extern TSS tss;
 extern PROCESS*		p_proc_ready;
+extern TASK 		task_table[NR_TASKS];

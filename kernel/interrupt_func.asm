@@ -56,6 +56,7 @@ disable_interrupt:
 	ret
 
 ;clock
+ALIGN	16
 clock_handler_invoker:
 	sub	esp, 4
 	
@@ -77,13 +78,11 @@ clock_handler_invoker:
 	;switch to the kernel stack
 	mov esp, StackTop
 
-	;call interrupt handler
-	call clock_interrupt
-	
 	sti
-	
-	push clock_int_msg
-	call print
+
+	;call interrupt handler
+	push 0
+	call clock_interrupt
 	add esp, 4
 
 	;push 1
@@ -94,7 +93,7 @@ clock_handler_invoker:
 
 	;switch back to the user stack
 	mov esp, [p_proc_ready]
-
+	lldt [esp + P_LDT_SEL]
 	;change the stack pointer stored in TSS
 	lea eax, [esp + P_STACKTOP]
 	mov 	dword [tss + TSS3_S_SP0], eax
