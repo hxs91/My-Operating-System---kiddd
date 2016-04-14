@@ -6,6 +6,8 @@ Add interrupt surpport
 #include "global.h"
 #include "screen.h"
 
+/* global varibales */
+
 /* 中断处理函数 */
 extern void	divide_error();
 extern void	single_step_exception();
@@ -27,6 +29,15 @@ extern void clock_handler_invoker();
 extern void keyboard_interrupt_invoker();
 extern void enable_interrupt();
 
+extern void	hwint00();
+extern void	hwint01();
+extern void	hwint02();
+extern void	hwint03();
+extern void	hwint04();
+extern void	hwint05();
+extern void	hwint06();
+extern void	hwint07();
+
 PUBLIC void exception_handler(int vec_no, int err_code, int eip, int cs, int eflag) {
 	print("\nexception vector number:");
 	print_hex(vec_no);
@@ -43,19 +54,6 @@ PRIVATE void init_idt_desc(u8 vector, u8 desc_type, int_handler handler, u8 priv
 	p_gate -> dcount = 0;
 	p_gate -> attr = desc_type | (privilege << 5);
 	p_gate -> offset_high = (base >> 16) & 0xFFFF;
-}
-
-/*
-clock interrupt handler
-*/
-PUBLIC void clock_interrupt(int irq) {
-	//print("I will refresh per second.\n");
-	port_byte_out(INT_M_CTL, EOI);
-	print("#");
-	p_proc_ready ++;
-	if (p_proc_ready >= proc_table + NR_TASKS) {
-		p_proc_ready = proc_table;
-	}
 }
 
 /*
@@ -123,12 +121,29 @@ PUBLIC void init_prot()
 	init_idt_desc(INT_VECTOR_COPROC_ERR,	DA_386IGate,
 		      copr_error,		PRIVILEGE_KRNL);
 
-	//clock
-	init_idt_desc(INT_VECTOR_IRQ0, DA_386IGate,
-			 clock_handler_invoker, PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ0 + 0,      DA_386IGate,
+                      hwint00,                  PRIVILEGE_KRNL);
 
-	//keyboard
-	init_idt_desc(INT_VECTOR_IRQ0 + 1, DA_386IGate,
-			 keyboard_interrupt_invoker, PRIVILEGE_KRNL);
+    init_idt_desc(INT_VECTOR_IRQ0 + 1,      DA_386IGate,
+                  hwint01,                  PRIVILEGE_KRNL);
+
+    init_idt_desc(INT_VECTOR_IRQ0 + 2,      DA_386IGate,
+                  hwint02,                  PRIVILEGE_KRNL);
+
+    init_idt_desc(INT_VECTOR_IRQ0 + 3,      DA_386IGate,
+                  hwint03,                  PRIVILEGE_KRNL);
+
+    init_idt_desc(INT_VECTOR_IRQ0 + 4,      DA_386IGate,
+                  hwint04,                  PRIVILEGE_KRNL);
+
+    init_idt_desc(INT_VECTOR_IRQ0 + 5,      DA_386IGate,
+                  hwint05,                  PRIVILEGE_KRNL);
+
+    init_idt_desc(INT_VECTOR_IRQ0 + 6,      DA_386IGate,
+                  hwint06,                  PRIVILEGE_KRNL);
+
+    init_idt_desc(INT_VECTOR_IRQ0 + 7,      DA_386IGate,
+                  hwint07,                  PRIVILEGE_KRNL);
+
 }
 

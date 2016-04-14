@@ -8,6 +8,8 @@ extern idt_ptr
 extern p_proc_ready
 extern tss
 extern StackTop
+extern irq_table
+extern spurious_irq
 
 ;global function
 extern exception_handler
@@ -17,6 +19,8 @@ extern delay
 extern k_reenter
 extern print_hex
 extern print
+extern restart
+extern restart_reenter
 
 global load_idt_ptr
 global disable_interrupt
@@ -39,6 +43,16 @@ global page_fault
 global copr_error
 global clock_handler_invoker
 global keyboard_interrupt_invoker
+global disable_irq
+global enable_irq
+global	hwint00
+global	hwint01
+global	hwint02
+global	hwint03
+global	hwint04
+global	hwint05
+global	hwint06
+global	hwint07
 
 clock_int_msg db "^", 0
 
@@ -58,25 +72,7 @@ disable_interrupt:
 ;clock
 ALIGN	16
 clock_handler_invoker:
-	sub	esp, 4
-	
-	;store the value of register
-	pushad
-	push ds
-	push es
-	push fs
-	push gs
-
-	mov dx, ss
-	mov ds, dx
-	mov es, dx
-
-	inc dword [k_reenter]
-	cmp dword [k_reenter], 0
-	jne re_enter
-
-	;switch to the kernel stack
-	mov esp, StackTop
+	call save
 
 	sti
 
@@ -85,31 +81,11 @@ clock_handler_invoker:
 	call clock_interrupt
 	add esp, 4
 
-	;push 1
-	;call delay
-	;add esp, 4
-
 	cli
 
-	;switch back to the user stack
-	mov esp, [p_proc_ready]
-	lldt [esp + P_LDT_SEL]
-	;change the stack pointer stored in TSS
-	lea eax, [esp + P_STACKTOP]
-	mov 	dword [tss + TSS3_S_SP0], eax
+	ret ; if reenter, then jump to restart_reenter; otherwise, jump to restart
+	; this "ret" if very important~~~, keep it in mind!
 
-re_enter:
-
-	dec dword [k_reenter]
-	;restore the value
-	pop gs
-	pop fs
-	pop es
-	pop ds
-	popad
-	add esp, 4
-
-	iretd
 
 ;keyboard
 keyboard_interrupt_invoker:
@@ -178,3 +154,161 @@ exception:
 	call exception_handler
 	add	esp, 4*2
 	hlt
+
+save:
+	;store the value of register
+	pushad
+	push ds
+	push es
+	push fs
+	push gs
+
+	mov dx, ss
+	mov ds, dx
+	mov es, dx
+
+	mov eax, esp	; eax = the start address of proc_table
+
+	inc dword [k_reenter]
+	cmp dword [k_reenter], 0
+	jne .1	;jmp if reenter
+
+	;switch to the kernel stack
+	mov esp, StackTop
+
+	push restart
+	jmp [eax + RETADR - P_STACKBASE]
+.1:
+	push restart_reenter
+	jmp [eax + RETADR - P_STACKBASE]
+
+
+; 中断和异常 -- 硬件中断
+; ---------------------------------
+%macro	hwint_master	1
+	call	save
+	in	al, INT_M_CTLMASK	; `.
+	or	al, (1 << %1)		;  | 屏蔽当前中断
+	out	INT_M_CTLMASK, al	; /
+	mov	al, EOI			; `. 置EOI位
+	out	INT_M_CTL, al		; /
+	sti	; CPU在响应中断的过程中会自动关中断，这句之后就允许响应新的中断
+	push	%1			; `.
+	call	[irq_table + 4 * %1]	;  | 中断处理程序
+	pop	ecx			; /
+	cli
+	in	al, INT_M_CTLMASK	; `.
+	and	al, ~(1 << %1)		;  | 恢复接受当前中断
+	out	INT_M_CTLMASK, al	; /
+	ret
+%endmacro
+
+
+ALIGN	16
+hwint00:		; Interrupt routine for irq 0 (the clock).
+	hwint_master	0
+
+ALIGN	16
+hwint01:		; Interrupt routine for irq 1 (keyboard)
+	hwint_master	1
+
+ALIGN	16
+hwint02:		; Interrupt routine for irq 2 (cascade!)
+	hwint_master	2
+
+ALIGN	16
+hwint03:		; Interrupt routine for irq 3 (second serial)
+	hwint_master	3
+
+ALIGN	16
+hwint04:		; Interrupt routine for irq 4 (first serial)
+	hwint_master	4
+
+ALIGN	16
+hwint05:		; Interrupt routine for irq 5 (XT winchester)
+	hwint_master	5
+
+ALIGN	16
+hwint06:		; Interrupt routine for irq 6 (floppy)
+	hwint_master	6
+
+ALIGN	16
+hwint07:		; Interrupt routine for irq 7 (printer)
+	hwint_master	7
+
+
+
+; ========================================================================
+;                  void disable_irq(int irq);
+; ========================================================================
+; Disable an interrupt request line by setting an 8259 bit.
+; Equivalent code:
+;	if(irq < 8){
+;		out_byte(INT_M_CTLMASK, in_byte(INT_M_CTLMASK) | (1 << irq));
+;	}
+;	else{
+;		out_byte(INT_S_CTLMASK, in_byte(INT_S_CTLMASK) | (1 << irq));
+;	}
+disable_irq:
+        mov     ecx, [esp + 4]          ; irq
+        pushf
+        cli
+        mov     ah, 1
+        rol     ah, cl                  ; ah = (1 << (irq % 8))
+        cmp     cl, 8
+        jae     disable_8               ; disable irq >= 8 at the slave 8259
+disable_0:
+        in      al, INT_M_CTLMASK
+        test    al, ah
+        jnz     dis_already             ; already disabled?
+        or      al, ah
+        out     INT_M_CTLMASK, al       ; set bit at master 8259
+        popf
+        mov     eax, 1                  ; disabled by this function
+        ret
+disable_8:
+        in      al, INT_S_CTLMASK
+        test    al, ah
+        jnz     dis_already             ; already disabled?
+        or      al, ah
+        out     INT_S_CTLMASK, al       ; set bit at slave 8259
+        popf
+        mov     eax, 1                  ; disabled by this function
+        ret
+dis_already:
+        popf
+        xor     eax, eax                ; already disabled
+        ret
+
+; ========================================================================
+;                  void enable_irq(int irq);
+; ========================================================================
+; Enable an interrupt request line by clearing an 8259 bit.
+; Equivalent code:
+;       if(irq < 8){
+;               out_byte(INT_M_CTLMASK, in_byte(INT_M_CTLMASK) & ~(1 << irq));
+;       }
+;       else{
+;               out_byte(INT_S_CTLMASK, in_byte(INT_S_CTLMASK) & ~(1 << irq));
+;       }
+;
+enable_irq:
+        mov     ecx, [esp + 4]          ; irq
+        pushf
+        cli
+        mov     ah, ~1
+        rol     ah, cl                  ; ah = ~(1 << (irq % 8))
+        cmp     cl, 8
+        jae     enable_8                ; enable irq >= 8 at the slave 8259
+enable_0:
+        in      al, INT_M_CTLMASK
+        and     al, ah
+        out     INT_M_CTLMASK, al       ; clear bit at master 8259
+        popf
+        ret
+enable_8:
+        in      al, INT_S_CTLMASK
+        and     al, ah
+        out     INT_S_CTLMASK, al       ; clear bit at slave 8259
+        popf
+        ret

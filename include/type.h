@@ -28,6 +28,7 @@ typedef struct s_descriptor {
 //typedef the function pointer of interrupt handler function
 typedef void (*int_handler) ();
 typedef void (*task_f) ();
+typedef	void	(*irq_handler)	(int irq);
 
 typedef struct s_tss {
 	u32	backlink;

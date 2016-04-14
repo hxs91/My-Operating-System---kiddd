@@ -5,6 +5,7 @@
 
 extern void test_A();
 extern void test_B();
+extern void test_C();
 
 PUBLIC u8 		idt_ptr[6];		// idt descriptor, 0-15:limit, 16-47:base
 PUBLIC GATE	idt[IDT_SIZE];	// the whole idt.
@@ -22,3 +23,5 @@ PUBLIC TASK 	task_table[NR_TASKS] = {
 	{test_A, STACK_SIZE_TESTA, "test_A"},
 	{test_B, STACK_SIZE_TESTB, "test_B"}
 };
+
+PUBLIC	irq_handler		irq_table[NR_IRQ];

@@ -5,6 +5,9 @@
 #include "proc.h"
 
 extern void restart();
+extern void put_irq_handler(int irq, irq_handler handler);
+extern void enable_irq(int irq);
+extern void clock_interrupt(int irq);
 
 PUBLIC u32 k_reenter;
 
@@ -33,6 +36,17 @@ PUBLIC void test_B() {
 	}
 }
 
+
+PUBLIC void test_C() {
+	int i = 0x2000;
+	while(1) {
+		print("C");
+		print_hex(i++);
+		print(".");
+		delay(1);
+	}
+}
+
 void init_process() {
 
 	task_table[0].initial_eip = test_A;
@@ -40,6 +54,9 @@ void init_process() {
 
 	task_table[1].initial_eip = test_B;
 	task_table[1].stacksize = STACK_SIZE_TESTB;
+
+	task_table[2].initial_eip = test_C;
+	task_table[2].stacksize = STACK_SIZE_TESTC;
 }
 
 /* entry for kernel */
@@ -86,7 +103,10 @@ void kernel_main() {
 		selector_ldt += 1<<3;
 	}
 
-	k_reenter = -1;
+	put_irq_handler(CLOCK_IRQ, clock_interrupt); /* 设定时钟中断处理程序 */
+    enable_irq(CLOCK_IRQ);                     /* 让8259A可以接收时钟中断 */
+
+	k_reenter = 0;
 	p_proc_ready	= proc_table;
 	restart();
 

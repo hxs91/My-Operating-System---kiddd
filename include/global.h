@@ -12,3 +12,4 @@ extern	char		task_stack[];
 extern TSS tss;
 extern PROCESS*		p_proc_ready;
 extern TASK 		task_table[NR_TASKS];
+extern irq_handler		irq_table[NR_IRQ];

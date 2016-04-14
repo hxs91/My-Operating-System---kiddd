@@ -4,6 +4,7 @@
 
 global _start
 global restart
+global restart_reenter
 global StackTop
 
 ; import function
@@ -12,6 +13,8 @@ extern main
 extern gdt_ptr
 extern p_proc_ready
 extern tss
+extern k_reenter
+
 
 [SECTION .bss]
 StackSpace	resb	2*1024	;define the size of stack ;kernel stack
@@ -42,6 +45,8 @@ restart:
 	lea	eax, [esp + P_STACKTOP]
 	mov	dword [tss + TSS3_S_SP0], eax
 
+restart_reenter:
+	dec dword [k_reenter]
 	pop	gs
 	pop	fs
 	pop	es
